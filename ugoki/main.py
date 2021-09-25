@@ -109,3 +109,12 @@ async def reject(sug_id, db: Session = Depends(get_db)):
     gif_file.unlink()
 
     return {"success": True}
+
+
+@app.delete("/gif/{gif_id}", dependencies=[Depends(require_auth)])
+async def delete_gif(gif_id):
+    gif = config.STORAGE / gif_id + ".gif"
+    if not gif.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    gif.unlink()
+    return {"success": True}
