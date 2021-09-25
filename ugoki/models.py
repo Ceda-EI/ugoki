@@ -14,6 +14,10 @@ class Category(Base):
     def __repr__(self):
         return f"<Category name={self.name!r}>"
 
+    @property
+    def count(self):
+        return len(self.gifs)
+
 
 class Gif(Base):
     __tablename__ = "gifs"
