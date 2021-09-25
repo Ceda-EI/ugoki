@@ -20,3 +20,8 @@ class Gif(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class Suggestion(Gif):
+    "Suggestion"
+    category_name: str

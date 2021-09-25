@@ -54,8 +54,7 @@ async def categories(db: Session = Depends(get_db)):
     return all_categories
 
 
-@app.post("/category/{name}", status_code=200,
-          dependencies=[Depends(require_auth)])
+@app.post("/category/{name}", dependencies=[Depends(require_auth)])
 async def category(name, db: Session = Depends(get_db)):
     "Adds a category"
 
@@ -71,11 +70,14 @@ async def category(name, db: Session = Depends(get_db)):
 async def gif(name, db: Session = Depends(get_db)):
     "Returns a gif"
 
-    gifs = db.query(m.Gif).filter(
-        m.Gif.approved,
-        m.Gif.category_name == name
-    ).all()
+    gifs = db.query(m.Gif).filter_by(approved=True, category_name=name).all()
 
     if not gifs:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return random.choice(gifs)
+
+
+@app.get("/suggestions", response_model=List[s.Suggestion],
+         dependencies=[Depends(require_auth)])
+async def suggestions(db: Session = Depends(get_db)):
+    return db.query(m.Gif).filter_by(approved=False).all()
