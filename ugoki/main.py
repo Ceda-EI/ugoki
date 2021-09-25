@@ -1,8 +1,9 @@
 "Main app"
+import random
 import secrets
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.session import Session
@@ -55,7 +56,7 @@ async def categories(db: Session = Depends(get_db)):
 
 @app.post("/category/{name}", status_code=200,
           dependencies=[Depends(require_auth)])
-async def category(name, response: Response, db: Session = Depends(get_db)):
+async def category(name, db: Session = Depends(get_db)):
     "Adds a category"
 
     try:
@@ -63,5 +64,18 @@ async def category(name, response: Response, db: Session = Depends(get_db)):
         db.commit()
         return {"success": True}
     except IntegrityError:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {"success": False}
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+
+@app.get("/category/{name}/gif", response_model=s.Gif)
+async def gif(name, db: Session = Depends(get_db)):
+    "Returns a gif"
+
+    gifs = db.query(m.Gif).filter(
+        m.Gif.approved,
+        m.Gif.category_name == name
+    ).all()
+
+    if not gifs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return random.choice(gifs)

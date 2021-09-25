@@ -11,3 +11,12 @@ class Category(BaseModel):
     class Config:
         "Pydantic Config"
         orm_mode = True
+
+
+class Gif(BaseModel):
+    "Gif returned in /category/{name}/gif"
+    id: str
+    url: str
+
+    class Config:
+        orm_mode = True
