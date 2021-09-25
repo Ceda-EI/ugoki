@@ -1,3 +1,4 @@
+"Database Models"
 from sqlalchemy import Boolean, Column, ForeignKey, String
 from sqlalchemy.orm import relationship
 
@@ -6,6 +7,7 @@ from .database import Base
 
 
 class Category(Base):
+    "Category"
     __tablename__ = "categories"
 
     name = Column(String, primary_key=True)
@@ -16,10 +18,12 @@ class Category(Base):
 
     @property
     def count(self):
-        return len(self.gifs)
+        "Number of approved gifs in this category"
+        return len([gif for gif in self.gifs if gif.approved])
 
 
 class Gif(Base):
+    "Gif or Suggestion - If approved, it is a gif. If not, it is a suggestion."
     __tablename__ = "gifs"
 
     id = Column(String, primary_key=True)
@@ -31,6 +35,7 @@ class Gif(Base):
 
     @property
     def url(self):
+        "Returns URL where it is served"
         return config.SERVE_ROOT + "/" + self.id + ".gif"
 
     def __repr__(self):

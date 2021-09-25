@@ -1,3 +1,4 @@
+"Main app"
 import secrets
 from typing import List
 
@@ -15,12 +16,17 @@ security = HTTPBasic()
 
 # Serves static directory at /static only in dev mode
 if config.DEV_MODE:
-    from fastapi.staticfiles import StaticFiles
+    from fastapi.staticfiles import StaticFiles  # pylint: disable=C0412
     app.mount("/static", StaticFiles(directory=str(config.STORAGE)),
               name="static")
 
 
 def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    """
+    Adding this to dependencies of a route ensures that the route is only
+    called by authenticated user
+    """
+
     c_un = secrets.compare_digest(credentials.username, config.AUTH_USER)
     c_pw = secrets.compare_digest(credentials.password, config.AUTH_PASSWORD)
     if not (c_un and c_pw):
@@ -32,6 +38,7 @@ def require_auth(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 def get_db():
+    "Returns the database"
     db = SessionLocal()
     try:
         yield db
@@ -41,6 +48,7 @@ def get_db():
 
 @app.get("/categories", response_model=List[s.Category])
 async def categories(db: Session = Depends(get_db)):
+    "Lists all categories and count"
     all_categories = db.query(m.Category).all()
     return all_categories
 
@@ -48,6 +56,8 @@ async def categories(db: Session = Depends(get_db)):
 @app.post("/category/{name}", status_code=200,
           dependencies=[Depends(require_auth)])
 async def category(name, response: Response, db: Session = Depends(get_db)):
+    "Adds a category"
+
     try:
         db.add(m.Category(name=name))
         db.commit()
