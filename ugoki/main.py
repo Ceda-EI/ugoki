@@ -5,7 +5,7 @@ from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm.session import Session
 
 from . import config, models as m, schemas as s
@@ -80,4 +80,32 @@ async def gif(name, db: Session = Depends(get_db)):
 @app.get("/suggestions", response_model=List[s.Suggestion],
          dependencies=[Depends(require_auth)])
 async def suggestions(db: Session = Depends(get_db)):
+    "Returns the list of suggestions"
     return db.query(m.Gif).filter_by(approved=False).all()
+
+
+@app.post("/suggestion/{sug_id}", dependencies=[Depends(require_auth)])
+async def approve(sug_id, db: Session = Depends(get_db)):
+    "Approves the suggestion"
+    db.query(m.Gif).filter_by(id=sug_id, approved=False).update(
+        {m.Gif.approved: True})
+    db.commit()
+    return {"success": True}
+
+
+@app.delete("/suggestion/{sug_id}", dependencies=[Depends(require_auth)])
+async def reject(sug_id, db: Session = Depends(get_db)):
+    "Rejects the suggestion"
+    try:
+        gif = db.query(m.Gif).filter_by(id=sug_id, approved=False).one()
+    except NoResultFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    db.delete(gif)
+    db.commit()
+    gif_file = config.STORAGE / sug_id + ".gif"
+    if not gif_file.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    gif_file.unlink()
+
+    return {"success": True}
