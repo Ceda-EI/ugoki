@@ -1,9 +1,11 @@
 "Main app"
+import hashlib
 import random
 import secrets
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, status
+import aiofiles
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm.session import Session
@@ -118,3 +120,32 @@ async def delete_gif(gif_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     gif.unlink()
     return {"success": True}
+
+
+@app.post("/new_suggestion/{category}", response_model=s.Suggestion)
+async def create_suggestion(category: str, file: UploadFile = File(...),
+                            db: Session = Depends(get_db)):
+    # Ensure that the category exists
+    if db.query(m.Category).get(category) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    # Ensure that the file is a gif
+    if file.content_type != "image/gif":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+    contents = await file.read()
+    gif_hash = hashlib.sha256(contents).hexdigest()
+
+    # Ensure it doesn't already exist
+    if db.query(m.Gif).get(gif_hash) is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
+
+    gif = m.Gif(id=gif_hash, category_name=category, approved=False)
+    db.add(gif)
+    db.commit()
+
+    filename = config.STORAGE / (gif_hash + ".gif")
+    async with aiofiles.open(filename, "wb") as gif_file:
+        await gif_file.write(contents)
+
+    return gif

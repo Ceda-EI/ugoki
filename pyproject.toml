@@ -11,6 +11,7 @@ fastapi = "^0.68.1"
 uvicorn = {extras = ["standard"], version = "^0.15.0"}
 SQLAlchemy = "^1.4.25"
 pydantic = "^1.8.2"
+python-multipart = "^0.0.5"
 
 [tool.poetry.dev-dependencies]
 aiofiles = "^0.7.0"
