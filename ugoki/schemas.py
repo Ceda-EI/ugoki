@@ -25,3 +25,8 @@ class Gif(BaseModel):
 class Suggestion(Gif):
     "Suggestion"
     category_name: str
+
+
+class Success(BaseModel):
+    "Success"
+    success: bool

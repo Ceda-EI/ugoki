@@ -50,14 +50,15 @@ def get_db():
 
 
 @app.get("/categories", response_model=List[s.Category])
-async def categories(db: Session = Depends(get_db)):
+async def list_categories(db: Session = Depends(get_db)):
     "Lists all categories and count"
     all_categories = db.query(m.Category).all()
     return all_categories
 
 
-@app.post("/category/{name}", dependencies=[Depends(require_auth)])
-async def category(name, db: Session = Depends(get_db)):
+@app.post("/category/{name}", dependencies=[Depends(require_auth)],
+          response_model=s.Success)
+async def create_category(name, db: Session = Depends(get_db)):
     "Adds a category"
 
     try:
@@ -69,7 +70,7 @@ async def category(name, db: Session = Depends(get_db)):
 
 
 @app.get("/category/{name}/gif", response_model=s.Gif)
-async def gif(name, db: Session = Depends(get_db)):
+async def get_gif(name, db: Session = Depends(get_db)):
     "Returns a gif"
 
     gifs = db.query(m.Gif).filter_by(approved=True, category_name=name).all()
@@ -81,13 +82,14 @@ async def gif(name, db: Session = Depends(get_db)):
 
 @app.get("/suggestions", response_model=List[s.Suggestion],
          dependencies=[Depends(require_auth)])
-async def suggestions(db: Session = Depends(get_db)):
+async def list_suggestions(db: Session = Depends(get_db)):
     "Returns the list of suggestions"
     return db.query(m.Gif).filter_by(approved=False).all()
 
 
-@app.post("/suggestion/{sug_id}", dependencies=[Depends(require_auth)])
-async def approve(sug_id, db: Session = Depends(get_db)):
+@app.post("/suggestion/{sug_id}", dependencies=[Depends(require_auth)],
+          response_model=s.Success)
+async def approve_suggestion(sug_id, db: Session = Depends(get_db)):
     "Approves the suggestion"
     db.query(m.Gif).filter_by(id=sug_id, approved=False).update(
         {m.Gif.approved: True})
@@ -95,8 +97,9 @@ async def approve(sug_id, db: Session = Depends(get_db)):
     return {"success": True}
 
 
-@app.delete("/suggestion/{sug_id}", dependencies=[Depends(require_auth)])
-async def reject(sug_id, db: Session = Depends(get_db)):
+@app.delete("/suggestion/{sug_id}", dependencies=[Depends(require_auth)],
+            response_model=s.Success)
+async def reject_suggestion(sug_id, db: Session = Depends(get_db)):
     "Rejects the suggestion"
     try:
         gif = db.query(m.Gif).filter_by(id=sug_id, approved=False).one()
@@ -108,17 +111,18 @@ async def reject(sug_id, db: Session = Depends(get_db)):
     gif_file = config.STORAGE / sug_id + ".gif"
     if not gif_file.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    gif_file.unlink()
+    gif_file.unlink(missing_ok=True)
 
     return {"success": True}
 
 
-@app.delete("/gif/{gif_id}", dependencies=[Depends(require_auth)])
+@app.delete("/gif/{gif_id}", dependencies=[Depends(require_auth)],
+            response_model=s.Success)
 async def delete_gif(gif_id):
     gif = config.STORAGE / gif_id + ".gif"
     if not gif.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    gif.unlink()
+    gif.unlink(missing_ok=True)
     return {"success": True}
 
 
