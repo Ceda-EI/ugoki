@@ -84,7 +84,7 @@ async def get_gif(name, db: Session = Depends(get_db)):
          dependencies=[Depends(require_auth)])
 async def list_suggestions(db: Session = Depends(get_db)):
     "Returns the list of suggestions"
-    return db.query(m.Gif).filter_by(approved=False).all()
+    return db.query(m.Gif).filter_by(approved=False).limit(50).all()
 
 
 @app.post("/suggestion/{sug_id}", dependencies=[Depends(require_auth)],
