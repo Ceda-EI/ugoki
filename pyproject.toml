@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ugoki"
-version = "1.0.2"
+version = "1.0.3"
 description = "API Server to serve random gifs with support for public suggestions"
 authors = ["Ceda EI <ceda_ei@webionite.com>"]
 license = "AGPL-3.0"
