@@ -108,7 +108,7 @@ async def reject_suggestion(sug_id, db: Session = Depends(get_db)):
 
     db.delete(gif)
     db.commit()
-    gif_file = config.STORAGE / sug_id + ".gif"
+    gif_file = config.STORAGE / (sug_id + ".gif")
     if not gif_file.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     gif_file.unlink(missing_ok=True)
@@ -119,7 +119,7 @@ async def reject_suggestion(sug_id, db: Session = Depends(get_db)):
 @app.delete("/gif/{gif_id}", dependencies=[Depends(require_auth)],
             response_model=s.Success)
 async def delete_gif(gif_id):
-    gif = config.STORAGE / gif_id + ".gif"
+    gif = config.STORAGE / (gif_id + ".gif")
     if not gif.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     gif.unlink(missing_ok=True)
